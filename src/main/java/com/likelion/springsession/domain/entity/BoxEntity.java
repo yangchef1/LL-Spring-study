@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 @Entity
 @NoArgsConstructor(access = AccessLevel.PROTECTED) // JPA 는 기본 생성자를 반드시 만들어야 함
 @Getter
-
+@Table(name="box")
 public class BoxEntity {
+
+    private static final int DEFAULT_LETTER_LIMIT = 20; // 정적 상수
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // IDENTITY -> Auto
@@ -19,26 +21,34 @@ public class BoxEntity {
 
     private String name;
 
-    @Column(nullable = false) // DB에 들어갈 때 nullable 확인
-    private  String nickname;
+    private int letterLimit = DEFAULT_LETTER_LIMIT;
 
-    private String password;
+    private String code;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
     private MemberEntity member;
 
-//    private int age;
-//    // int -> 원시 타입 (null 불가 등,,) / INTEGER -> 래퍼 타입 (null 가능 등,,)
-//
-//    private boolean isAdult;
-//    // Entity 에서 boolean 은 웬만하면 원시 클래스로 ,, (T or F 여야 하는데 null 상태가 추가되기 때문에 ,,)
+    // 양방향 연관관계 (box에서 letter를 참조할 일이 많을 때 사용)
+    // @OneToMany(mappedBy = "box")
+    // private final List<LetterEntity> new ArrayList<>();
 
     @Builder
-    public BoxEntity(Long id, String name, String nickname, String password, MemberEntity member) {
-        this.id = id;
+    public BoxEntity(String name, int letterLimit, String code, MemberEntity member) {
         this.name = name;
-        this.nickname = nickname;
-        this.password = password;
+        validate(letterLimit);
+        this.code = code;
         this.member = member;
+    }
+
+    private void validate(int letterLimit) {
+        validateLetterLimit(letterLimit);
+    }
+
+
+    private void validateLetterLimit(int letterLimit) {
+        if (letterLimit > DEFAULT_LETTER_LIMIT || letterLimit < 0) {
+            throw new IllegalArgumentException("Invalid Letter Limit");
+        }
     }
 }
